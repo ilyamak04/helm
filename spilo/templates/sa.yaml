@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "spilo.serviceAccountName" . }}
+  labels:
+    {{- include "spilo.labels" . | nindent 4 }}
