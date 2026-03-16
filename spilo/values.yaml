@@ -32,7 +32,7 @@ data:
   storage: 2Gi
 
 serviceAccount:
-  name: "testRole"
+  name: ""  # если не задано, будет использовано spilo.fullname 
 
 podManagementPolicy: Parallel
 
