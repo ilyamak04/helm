@@ -48,7 +48,6 @@ helm uninstall my-spilo
 
 - `image.name` - образ Spilo (по умолчанию `registry.opensource.zalan.do/acid/spilo-15`).
 - `image.tag` - тег образа (по умолчанию `3.0-p1`).
-- `image.pullPolicy` - политика вытягивания образа (`IfNotPresent` по умолчанию).
 - `replicas` - количество Pod’ов в StatefulSet (размер кластера PostgreSQL).
 
 Пример:
