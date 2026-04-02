@@ -2,41 +2,35 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+
+# Тип развертывания зависит от того, какой volume используется при работе
+# с контейнером.
+# Если volume типа ReadWriteMany - Deployment
+# Если volume типа ReadWriteOnce - StatefulSet
+type: StatefulSet
+# В случе type: StatefulSet replicaCount всегда = 1
 replicaCount: 1
 
-# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
-image:
-  repository: nginx
-  # This sets the pull policy for images.
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+# image:
+#   repository: 
+#   pullPolicy: 
+#   # Overrides the image tag whose default is the chart appVersion.
+#   tag: ""
 
-# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
-# This is to override the chart name.
 nameOverride: ""
 fullnameOverride: ""
 
-# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
 serviceAccount:
-  # Specifies whether a service account should be created.
-  create: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account.
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template.
+  # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-# This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
 podAnnotations: {}
-# This is for setting Kubernetes Labels to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-podLabels: {}
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -49,113 +43,124 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
-# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
-service:
-  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-  type: ClusterIP
-  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+# Данный сервис необходим только для StatefulSet
+serviceHeadless:
   port: 80
 
-# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
-ingress:
-  enabled: false
-  className: ""
+# Service types: NodePort, LoadBalancer
+serviceSSH:
+  enable: false
+  type: NodePort
+  port: 2022
+  nodePort: ""
+  # Пример конфигурации сервиса типа LoadBalancer MetalLB
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    - host: chart-example.local
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls: []
-    # - secretName: chart-example-tls
-    #   hosts:
-    #     - chart-example.local
+  #  metallb.universe.tf/loadBalancerIPs: 192.168.1.100
 
-# -- Expose the service via gateway-api HTTPRoute
-# Requires Gateway API resources and suitable controller installed within the cluster
-# (see: https://gateway-api.sigs.k8s.io/guides/)
-httpRoute:
-  # HTTPRoute enabled.
-  enabled: false
-  # HTTPRoute annotations.
+# Service types: ClusterIP, NodePort, LoadBalancer
+service:
+  type: ClusterIP
+  port: 80
+  nodePort: ""
+  # Пример конфигурации сервиса типа LoadBalancer MetalLB
   annotations: {}
-  # Which Gateways this Route is attached to.
-  parentRefs:
-  - name: gateway
-    sectionName: http
-    # namespace: default
-  # Hostnames matching HTTP header.
-  hostnames:
-  - chart-example.local
-  # List of rules and filters applied.
-  rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /headers
-  #   filters:
-  #   - type: RequestHeaderModifier
-  #     requestHeaderModifier:
-  #       set:
-  #       - name: My-Overwrite-Header
-  #         value: this-is-the-only-value
-  #       remove:
-  #       - User-Agent
-  # - matches:
-  #   - path:
-  #       type: PathPrefix
-  #       value: /echo
-  #     headers:
-  #     - name: version
-  #       value: v2
+  #  metallb.universe.tf/loadBalancerIPs: 192.168.1.100
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
 
-# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-livenessProbe:
-  httpGet:
-    path: /
-    port: http
-readinessProbe:
-  httpGet:
-    path: /
-    port: http
+redis:
+  builtin: true
+  # Конфигурация внешнего Redis
+  externalRedis:
+    host: "192.168.0.1"
+    port: "6379"
+    # user: "gitflic"
+    user: ""
+    # password: "passw0rd"
+    password: ""
+    # database: "0"
+    database: ""
+    ssl: false
+  # Конфигурация встроенного Redis
+  global:
+    storageClass: ""
+  auth:
+    enabled: false
+    password: "PASSW0RD"
+  master:
+    count: 1
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 1Gi
+  replica:
+    replicaCount: 1
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 1Gi
+  volumePermissions:
+    enabled: true
 
-# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
-# Additional volumes on the output Deployment definition.
-volumes: []
-  # - name: foo
-  #   secret:
-  #     secretName: mysecret
-  #     optional: false
-
-# Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
-  # - name: foo
-  #   mountPath: "/etc/foo"
-  #   readOnly: true
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
+postgresql:
+  builtin: true
+  # Общие параметры.
+  postgresDBName: "gitflic"
+  postgresUser: "gitflic"
+  # Secret создаваемый в ручную.
+  # ---
+  # apiVersion: v1
+  # kind: Secret
+  # metadata:
+  #   name: secretName
+  # type: Opaque
+  # stringData:
+  #   postgres-user-password: password
+  # ...
+  # Если имя секрета определеноЮ пароль берется из этого сикрета
+  secretName: ""
+  # Если Secret не определён, и пароль явно не задан в следующем параметре,
+  # Secret с паролем генерируется автоматически.
+  postgresPassword: ""
+  # Параметры внешней базы данных.
+  externalDB:
+    postgresHost: "192.168.0.1"
+    postgresPort: "5432"
+  # Параметры встроенной базы данных.
+  jobInitDB:
+    image: postgres
+    tag: 18.3-alpine3.23
+    imagePullPolicy: IfNotPresent
+  global:
+    storageClass: ""
+  clusterDomain: "cluster.local"
+  image:
+    tag: 18.3-bookworm
+  auth:
+    postgresPassword: "password"
+  architecture: replication
+  shmVolume:
+    sizeLimit: "1Gi"
+  primary:
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: "1Gi"
+  readReplicas:
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: "1Gi"
